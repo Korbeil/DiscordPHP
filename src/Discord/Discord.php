@@ -37,7 +37,7 @@ use Ratchet\Client\WebSocket;
 use Ratchet\RFC6455\Messaging\Message;
 use React\EventLoop\Factory as LoopFactory;
 use React\EventLoop\LoopInterface;
-use React\EventLoop\Timer\TimerInterface;
+use React\EventLoop\TimerInterface;
 use React\Promise\Deferred;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -67,7 +67,7 @@ class Discord
      *
      * @var string Version.
      */
-    const VERSION = 'v4.0.3';
+    const VERSION = 'v5.0.0';
 
     /**
      * The logger.
@@ -208,7 +208,7 @@ class Discord
      *
      * @var TimerInterface Timer.
      */
-    protected $heatbeatTimer;
+    protected $heartbeatTimer;
 
     /**
      * The timer that resends the heartbeat packet if
@@ -575,13 +575,13 @@ class Discord
     {
         $this->connected = false;
 
-        if (! is_null($this->heartbeatTimer)) {
-            $this->heartbeatTimer->cancel();
+        if (null !== $this->heartbeatTimer) {
+            $this->loop->cancelTimer($this->heartbeatTimer);
             $this->heartbeatTimer = null;
         }
 
         if (! is_null($this->heartbeatAckTimer)) {
-            $this->heartbeatAckTimer->cancel();
+            $this->loop->cancelTimer($this->heartbeatAckTimer);
             $this->heartbeatAckTimer = null;
         }
 
@@ -715,7 +715,7 @@ class Discord
         $diff     = $received - $this->heartbeatTime;
         $time     = $diff * 1000;
 
-        $this->heartbeatAckTimer->cancel();
+        $this->loop->cancelTimer($this->heartbeatAckTimer);
         $this->emit('heartbeat-ack', [$time, $this]);
         $this->logger->debug('received heartbeat ack', ['response_time' => $time]);
     }
@@ -904,8 +904,8 @@ class Discord
     protected function setupHeartbeat($interval)
     {
         $this->heartbeatInterval = $interval;
-        if (isset($this->heartbeatTimer)) {
-            $this->heartbeatTimer->cancel();
+        if (null !== $this->heartbeatTimer) {
+            $this->loop->cancelTimer($this->heartbeatTimer);
         }
 
         $interval             = $interval / 1000;
@@ -1358,7 +1358,7 @@ class Discord
 
         return $config;
     }
-    
+
     /**
      * @see https://reactphp.org/event-loop/#addtimer
      */
@@ -1366,7 +1366,7 @@ class Discord
 	{
 		$this->loop->addTimer($interval, $callback);
 	}
-    
+
      /**
      * @see https://reactphp.org/event-loop/#addPeriodicTimer
      */

@@ -13,8 +13,9 @@ namespace Discord\Helpers;
 
 use Evenement\EventEmitter;
 use React\EventLoop\LoopInterface;
-use React\EventLoop\Timer\Timer;
-use React\Stream\Stream;
+use React\EventLoop\TimerInterface;
+use React\Stream\ReadableResourceStream;
+use RuntimeException;
 
 /**
  * Process component.
@@ -114,19 +115,19 @@ class Process extends EventEmitter
             throw new \RuntimeException('Unable to launch a new process.');
         }
 
-        $this->stdin = new Stream($this->pipes[0], $loop);
+        $this->stdin = new ReadableResourceStream($this->pipes[0], $loop);
         $this->stdin->pause();
-        $this->stdout = new Stream($this->pipes[1], $loop);
-        $this->stderr = new Stream($this->pipes[2], $loop);
+        $this->stdout = new ReadableResourceStream($this->pipes[1], $loop);
+        $this->stderr = new ReadableResourceStream($this->pipes[2], $loop);
 
         foreach ($this->pipes as $pipe) {
             stream_set_blocking($pipe, 0);
         }
 
-        $loop->addPeriodicTimer($interval, function (Timer $timer) {
-            if (! $this->isRunning()) {
+        $loop->addPeriodicTimer($interval, function (TimerInterface $timer) use ($loop) {
+            if (!$this->isRunning()) {
                 // $this->close();
-                $timer->cancel();
+                $loop->cancelTimer($timer);
                 $this->emit('exit', [$this->getExitCode(), $this->getTermSignal()]);
             }
         });
@@ -427,7 +428,7 @@ class Process extends EventEmitter
 
         $this->status = proc_get_status($this->process);
 
-        if ($this->status === false) {
+        if (!$this->status) {
             throw new \UnexpectedValueException('proc_get_status() failed');
         }
 
