@@ -29,11 +29,11 @@ class PresenceUpdate extends Event
         $guild  = $this->discord->guilds->get('id', $presenceUpdate->guild_id);
         $member = $guild->members->get('id', $presenceUpdate->user->id);
 
-        $rawAttributes = $member->getRawAttributes();
-        $data['nick'] = $rawAttributes['user']->username;
-        $presenceUpdate = $this->factory->create(PresenceUpdatePart::class, $data, true);
-
         if (null !== $member) {
+            $rawAttributes = $member->getRawAttributes();
+            $data['nick'] = $rawAttributes['user']->username;
+            $presenceUpdate = $this->factory->create(PresenceUpdatePart::class, $data, true);
+
             $rawOld = array_merge([
                 'roles'  => [],
                 'status' => null,
