@@ -1,5 +1,5 @@
 {
-    "name": "team-reflex/discord-php",
+    "name": "korbeil/discord-php",
     "description": "An unofficial API to interact with the voice and text service Discord.",
     "license": "MIT",
     "authors": [
